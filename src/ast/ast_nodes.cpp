@@ -1,6 +1,60 @@
-#include "ast_nodes.h"
+#include "ast/ast_nodes.h"
+#include "semantic/Symbol.hpp" // ADD THIS - to get Symbol class definition
 #include <iostream>
 #include <iomanip>
+#include <sstream> // ADD THIS - for string operations
+
+// ==================== TokenType to string helper ====================
+// helper function (optional but useful for debugging)
+std::string tokenTypeToString(TokenType type)
+{
+    // You should have this somewhere, or implement a simple version
+    // Check if your tokenizer.h has string conversion
+    return "TokenType[" + std::to_string(static_cast<int>(type)) + "]";
+}
+
+// Implementation of getDataTypeString
+std::string ASTNode::getDataTypeString() const
+{
+    switch (nodeDataType)
+    {
+    case DataType::INT:
+        return "int";
+    case DataType::CHAR:
+        return "char";
+    case DataType::VOID:
+        return "void";
+    case DataType::POINTER:
+        return "pointer";
+    case DataType::ARRAY:
+        return "array";
+    case DataType::UNKNOWN:
+        return "unknown";
+    default:
+        return "undefined";
+    }
+}
+
+// Optional: Add inferDataType for LiteralExpr (in ast_nodes.cpp)
+DataType LiteralExpr::inferDataType() const
+{
+    // Check if these TokenType values exist in your tokenizer.h
+    // If not, you'll need to adjust based on your actual TokenType enum
+    switch (literalType)
+    {
+    case TokenType::LITERAL_INT: // Make sure this exists
+        return DataType::INT;
+    case TokenType::LITERAL_FLOAT:
+        // For simplicity, treat float as int for now
+        return DataType::INT;
+    case TokenType::LITERAL_CHAR:
+        return DataType::CHAR;
+    case TokenType::LITERAL_STRING:
+        return DataType::POINTER; // char* in C
+    default:
+        return DataType::UNKNOWN;
+    }
+}
 
 // ==================== Helper Functions ====================
 static void printIndent(int indent)
@@ -16,8 +70,20 @@ void VarExpr::print(int indent) const
 {
     printIndent(indent);
     std::cout << "VarExpr: " << name;
-    if (!type.empty())
-        std::cout << " (" << type << ")";
+
+    // Show semantic info if available
+    if (hasSymbol())
+    {
+        std::cout << " [symbol]";
+    }
+    if (hasDataType())
+    {
+        std::cout << " type:" << getDataTypeString();
+    }
+    else if (!type.empty())
+    {
+        std::cout << " (" << type << ")"; // legacy string type
+    }
     std::cout << "\n";
 }
 
@@ -26,6 +92,29 @@ void LiteralExpr::print(int indent) const
 {
     printIndent(indent);
     std::cout << "LiteralExpr: " << value;
+
+    // Show inferred type
+    DataType inferred = inferDataType();
+    if (inferred != DataType::UNKNOWN)
+    {
+        std::cout << " [";
+        switch (inferred)
+        {
+        case DataType::INT:
+            std::cout << "int";
+            break;
+        case DataType::CHAR:
+            std::cout << "char";
+            break;
+        case DataType::POINTER:
+            std::cout << "pointer";
+            break;
+        default:
+            std::cout << "type:" << static_cast<int>(inferred);
+        }
+        std::cout << "]";
+    }
+
     if (!type.empty())
         std::cout << " (" << type << ")";
     std::cout << "\n";
@@ -35,7 +124,15 @@ void LiteralExpr::print(int indent) const
 void BinaryExpr::print(int indent) const
 {
     printIndent(indent);
-    std::cout << "BinaryExpr: op=" << static_cast<int>(op) << "\n";
+    std::cout << "BinaryExpr: op=" << static_cast<int>(op);
+
+    // Show result type if known
+    if (hasDataType())
+    {
+        std::cout << " result:" << getDataTypeString();
+    }
+    std::cout << "\n";
+
     if (left)
     {
         printIndent(indent + 1);
@@ -65,7 +162,15 @@ void UnaryExpr::print(int indent) const
 void CallExpr::print(int indent) const
 {
     printIndent(indent);
-    std::cout << "CallExpr: " << funcName << "()\n";
+    std::cout << "CallExpr: " << funcName << "()";
+
+    // Show semantic info if available
+    if (hasSymbol())
+    {
+        std::cout << " [has symbol]";
+    }
+    std::cout << "\n";
+
     if (!arguments.empty())
     {
         printIndent(indent + 1);
@@ -156,12 +261,23 @@ void VarDecl::print(int indent) const
 {
     printIndent(indent);
     std::cout << "VarDecl: " << typeName << " " << varName;
+
+    // Show semantic info if available
+    if (hasSymbol())
+    {
+        std::cout << " [symbol]";
+    }
+    if (hasDataType())
+    {
+        std::cout << " type:" << getDataTypeString();
+    }
+
     if (initializer)
     {
         std::cout << " = ";
-        // Simple print for now
     }
     std::cout << "\n";
+
     if (initializer)
     {
         initializer->print(indent + 1);
@@ -174,13 +290,21 @@ void FunctionDecl::print(int indent) const
     printIndent(indent);
     std::cout << "FunctionDecl: " << returnType << " " << funcName << "(";
 
+    // Print parameters
     for (size_t i = 0; i < parameters.size(); ++i)
     {
         if (i > 0)
             std::cout << ", ";
         std::cout << parameters[i]->typeName << " " << parameters[i]->varName;
     }
-    std::cout << ")\n";
+    std::cout << ")";
+
+    // Show semantic info if available
+    if (hasSymbol())
+    {
+        std::cout << " [symbol]";
+    }
+    std::cout << "\n";
 
     if (body)
     {

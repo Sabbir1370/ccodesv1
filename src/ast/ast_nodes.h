@@ -12,20 +12,19 @@ class Stmt;
 class Expr;
 class Decl;
 
-class FunctionDecl;
-class VarDecl;
+// Semantic system forward declarations
+class Symbol;
 
-class CompoundStmt;
-class IfStmt;
-class WhileStmt;
-class ReturnStmt;
-class ExprStmt;
-
-class BinaryExpr;
-class UnaryExpr;
-class CallExpr;
-class VarExpr;
-class LiteralExpr;
+// ==================== Data Type Enum ====================
+enum class DataType
+{
+    INT,
+    CHAR,
+    VOID,
+    POINTER,
+    ARRAY,
+    UNKNOWN
+};
 
 // ==================== Source Location ====================
 struct SourceLoc
@@ -36,6 +35,13 @@ struct SourceLoc
     SourceLoc() = default;
     SourceLoc(int l, int c) : line(l), column(c) {}
     SourceLoc(const Token &token) : line(token.line), column(token.column) {}
+
+    // Helper to convert to semantic SourceLocation (if needed)
+    bool isValid() const { return line > 0; }
+    std::string toString() const
+    {
+        return "line " + std::to_string(line) + ", col " + std::to_string(column);
+    }
 };
 
 // ==================== Base AST Node ====================
@@ -49,6 +55,25 @@ public:
 
     // Source location for error reporting
     SourceLoc location;
+
+    // ===== SEMANTIC ANALYSIS FIELDS =====
+protected:
+    std::shared_ptr<Symbol> resolvedSymbol;
+    DataType nodeDataType = DataType::UNKNOWN;
+
+public:
+    // Symbol accessors
+    void setSymbol(std::shared_ptr<Symbol> symbol) { resolvedSymbol = symbol; }
+    std::shared_ptr<Symbol> getSymbol() const { return resolvedSymbol; }
+    bool hasSymbol() const { return resolvedSymbol != nullptr; }
+
+    // Type accessors
+    void setDataType(DataType type) { nodeDataType = type; }
+    DataType getDataType() const { return nodeDataType; }
+    bool hasDataType() const { return nodeDataType != DataType::UNKNOWN; }
+
+    // Utility
+    std::string getDataTypeString() const;
 };
 
 // ==================== Expression Base Class ====================
@@ -56,19 +81,26 @@ class Expr : public ASTNode
 {
 public:
     // Type information (for semantic analysis later)
-    std::string type; // "int", "float", "void", etc.
+    std::string type; // "int", "float", "void", etc. (string representation)
+
+    // Constructor
+    Expr() = default;
 };
 
 // ==================== Statement Base Class ====================
 class Stmt : public ASTNode
 {
     // Base class for all statements
+public:
+    Stmt() = default;
 };
 
 // ==================== Declaration Base Class ====================
-class Decl : public ASTNode
+class Decl : public Stmt
 {
     // Base class for declarations
+public:
+    Decl() = default;
 };
 
 // ==================== Specific Expression Nodes ====================
@@ -85,6 +117,9 @@ public:
     }
 
     void print(int indent = 0) const override;
+
+    // Semantic helper
+    const std::string &getName() const { return name; }
 };
 
 // Literal expression: 42, 3.14, "hello"
@@ -101,6 +136,9 @@ public:
     }
 
     void print(int indent = 0) const override;
+
+    // Semantic helper - infer DataType from literal type
+    DataType inferDataType() const;
 };
 
 // Binary expression: a + b, x == y
@@ -119,6 +157,11 @@ public:
     }
 
     void print(int indent = 0) const override;
+
+    // Semantic helper
+    TokenType getOperator() const { return op; }
+    Expr *getLeft() const { return left.get(); }
+    Expr *getRight() const { return right.get(); }
 };
 
 // Unary expression: -x, !flag
@@ -135,6 +178,10 @@ public:
     }
 
     void print(int indent = 0) const override;
+
+    // Semantic helper
+    TokenType getOperator() const { return op; }
+    Expr *getOperand() const { return operand.get(); }
 };
 
 // Function call: func(arg1, arg2)
@@ -150,6 +197,14 @@ public:
     }
 
     void print(int indent = 0) const override;
+
+    // ===== SEMANTIC HELPER METHODS =====
+    const std::string &getFunctionName() const { return funcName; }
+    size_t getArgCount() const { return arguments.size(); }
+    Expr *getArgument(size_t index) const
+    {
+        return (index < arguments.size()) ? arguments[index].get() : nullptr;
+    }
 };
 
 // ==================== Specific Statement Nodes ====================
@@ -167,6 +222,10 @@ public:
     }
 
     void print(int indent = 0) const override;
+
+    // Semantic helper
+    bool hasValue() const { return value != nullptr; }
+    Expr *getValue() const { return value.get(); }
 };
 
 // Compound statement: { stmt1; stmt2; ... }
@@ -179,6 +238,13 @@ public:
         location = loc;
     }
     void print(int indent = 0) const override;
+
+    // Semantic helper
+    size_t getStatementCount() const { return statements.size(); }
+    Stmt *getStatement(size_t index) const
+    {
+        return (index < statements.size()) ? statements[index].get() : nullptr;
+    }
 };
 
 // If statement: if (cond) thenStmt else elseStmt
@@ -199,6 +265,12 @@ public:
     }
 
     void print(int indent = 0) const override;
+
+    // Semantic helpers
+    Expr *getCondition() const { return condition.get(); }
+    Stmt *getThenBranch() const { return thenBranch.get(); }
+    Stmt *getElseBranch() const { return elseBranch.get(); }
+    bool hasElseBranch() const { return elseBranch != nullptr; }
 };
 
 // While statement: while (cond) body
@@ -216,6 +288,10 @@ public:
     }
 
     void print(int indent = 0) const override;
+
+    // Semantic helpers
+    Expr *getCondition() const { return condition.get(); }
+    Stmt *getBody() const { return body.get(); }
 };
 
 // Expression statement: expr; (function calls, assignments)
@@ -231,6 +307,9 @@ public:
     }
 
     void print(int indent = 0) const override;
+
+    // Semantic helper
+    Expr *getExpression() const { return expression.get(); }
 };
 
 // ==================== Specific Declaration Nodes ====================
@@ -251,6 +330,29 @@ public:
     }
 
     void print(int indent = 0) const override;
+
+    // ===== SEMANTIC HELPER METHODS =====
+    const std::string &getTypeName() const { return typeName; }
+    const std::string &getVarName() const { return varName; }
+
+    DataType getDeclaredDataType() const
+    {
+        // Convert typeName string to DataType enum
+        if (typeName == "int")
+            return DataType::INT;
+        if (typeName == "char")
+            return DataType::CHAR;
+        if (typeName == "void")
+            return DataType::VOID;
+        if (typeName.find('*') != std::string::npos)
+            return DataType::POINTER;
+        if (typeName.find('[') != std::string::npos)
+            return DataType::ARRAY;
+        return DataType::UNKNOWN;
+    }
+
+    bool hasInitializer() const { return initializer != nullptr; }
+    Expr *getInitializer() const { return initializer.get(); }
 };
 
 // Function declaration: int main() { ... }
@@ -270,6 +372,32 @@ public:
     }
 
     void print(int indent = 0) const override;
+
+    // ===== SEMANTIC HELPER METHODS =====
+    const std::string &getReturnType() const { return returnType; }
+    const std::string &getFunctionName() const { return funcName; }
+
+    DataType getReturnDataType() const
+    {
+        if (returnType == "int")
+            return DataType::INT;
+        if (returnType == "char")
+            return DataType::CHAR;
+        if (returnType == "void")
+            return DataType::VOID;
+        if (returnType.find('*') != std::string::npos)
+            return DataType::POINTER;
+        return DataType::UNKNOWN;
+    }
+
+    size_t getParamCount() const { return parameters.size(); }
+    VarDecl *getParameter(size_t index) const
+    {
+        return (index < parameters.size()) ? parameters[index].get() : nullptr;
+    }
+
+    CompoundStmt *getBody() const { return body.get(); }
+    bool hasBody() const { return body != nullptr; }
 };
 
 #endif // AST_NODES_H

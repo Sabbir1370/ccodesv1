@@ -3,6 +3,10 @@
 #include <string>
 #include "parser/tokenizer.h"
 #include "parser/parser.h" // Add this
+#include "semantic/SymbolTable.hpp"
+#include "semantic/Symbol.hpp"
+#include "utils/SourceLocation.hpp"
+#include "semantic/SemanticAnalyzer.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -30,28 +34,36 @@ int main(int argc, char *argv[])
     Tokenizer tokenizer(source);
     auto tokens = tokenizer.tokenize();
 
-    // Debug: Print tokens
-    std::cout << "=== Tokens ===" << tokens.size() << " tokens:\n";
-    for (const auto &token : tokens)
-    {
-        std::cout << "Line " << token.line << ":" << token.column
-                  << " Type=" << static_cast<int>(token.type)
-                  << " Lexeme='" << token.lexeme << "'\n";
-    }
-
     // Parse
-    std::cout << "\n=== AST ===\n";
     Parser parser(tokens);
     auto ast = parser.parse();
 
     if (ast)
     {
+        std::cout << "\n=== AST ===" << std::endl;
         ast->print();
-        std::cout << "\nParsing successful!\n";
+
+        // Run semantic analysis
+        SemanticAnalyzer semanticAnalyzer;
+        semanticAnalyzer.analyze(std::move(ast));
+        if (semanticAnalyzer.hasErrors())
+        {
+            std::cout << "\n✗ Semantic analysis failed!" << std::endl;
+            return 1;
+        }
+        else
+        {
+            std::cout << "\n✓ Semantic analysis passed!" << std::endl;
+
+            // Optional: Print symbol table
+            std::cout << "\n=== Symbol Table ===" << std::endl;
+            semanticAnalyzer.getSymbolTable()->print();
+        }
     }
     else
     {
         std::cout << "\nParsing failed!\n";
+        return 1;
     }
 
     return 0;
