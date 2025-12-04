@@ -1,6 +1,6 @@
 #ifndef AST_NODES_H
 #define AST_NODES_H
-
+#include <iostream>
 #include <memory>
 #include <vector>
 #include <string>
@@ -93,6 +93,34 @@ class Stmt : public ASTNode
     // Base class for all statements
 public:
     Stmt() = default;
+};
+
+// Program node - represents entire source file with multiple top-level declarations
+class Program : public ASTNode
+{
+public:
+    std::vector<std::unique_ptr<Stmt>> declarations;
+
+    Program() = default;
+
+    void print(int indent = 0) const override
+    {
+        std::string ind(indent, ' ');
+        std::cout << ind << "Program (" << declarations.size() << " declarations):\n";
+        for (const auto &decl : declarations)
+        {
+            if (decl)
+            {
+                decl->print(indent + 2);
+            }
+        }
+    }
+
+    size_t getDeclarationCount() const { return declarations.size(); }
+    Stmt *getDeclaration(size_t index) const
+    {
+        return (index < declarations.size()) ? declarations[index].get() : nullptr;
+    }
 };
 
 // ==================== Declaration Base Class ====================

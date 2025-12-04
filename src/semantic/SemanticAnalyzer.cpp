@@ -6,6 +6,7 @@
 
 SemanticAnalyzer::SemanticAnalyzer()
     : symbolTable(std::make_unique<SymbolTable>()),
+      astRoot(nullptr),
       inFunction(false),
       currentFunction(nullptr)
 {
@@ -20,7 +21,7 @@ void SemanticAnalyzer::analyze(std::shared_ptr<ASTNode> root)
         addError("Cannot analyze null AST");
         return;
     }
-
+    astRoot = root;
     std::cout << "\n=== Starting Semantic Analysis ===" << std::endl;
 
     // Reset state

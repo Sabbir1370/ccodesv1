@@ -268,23 +268,26 @@ void Parser::parseParameterList(std::vector<std::unique_ptr<VarDecl>> &params)
     } while (match(TokenType::PUNCT_COMMA));
 }
 // ==================== Main Parse Method ====================
-
 std::unique_ptr<ASTNode> Parser::parse()
 {
-    std::unique_ptr<ASTNode> result = nullptr;
+    // Create a compound statement to hold all top-level declarations
+    auto compound = std::make_unique<CompoundStmt>();
 
     try
     {
-        // Parse until we find a function declaration
+        // Parse all declarations in the file
         while (!isAtEnd())
         {
             auto decl = parseDeclaration();
             if (decl)
             {
-                if (!result)
-                    result = std::move(decl);
-                else
-                    break; // Just parse first function for now
+                // Add to compound statement
+                compound->statements.push_back(std::unique_ptr<Stmt>(static_cast<Stmt *>(decl.release())));
+            }
+            else
+            {
+                // If parseDeclaration returns null, skip token
+                advance();
             }
         }
     }
@@ -297,12 +300,24 @@ std::unique_ptr<ASTNode> Parser::parse()
         std::cerr << "Unknown parser exception" << std::endl;
     }
 
-    return result;
-}
+    // Return the compound statement containing all functions
+    // If empty, return nullptr
+    if (compound->statements.empty())
+    {
+        return nullptr;
+    }
 
+    // If only one function, return it directly for compatibility
+    if (compound->statements.size() == 1)
+    {
+        return std::move(compound->statements[0]);
+    }
+
+    return compound;
+}
 // ==================== Declaration Parsing ====================
 
-std::unique_ptr<Decl> Parser::parseDeclaration()
+std::unique_ptr<Decl> Parser::parseDeclaration() // CHANGE: Return Stmt
 {
     // Look for type keywords OR identifier types (like size_t)
     if (isTypeToken(peek().type) || peek().type == TokenType::IDENTIFIER)
@@ -328,13 +343,13 @@ std::unique_ptr<Decl> Parser::parseDeclaration()
             {
                 // It's a function declaration
                 current = savePos;
-                return parseFunctionDeclaration();
+                return parseFunctionDeclaration(); // Returns unique_ptr<FunctionDecl>
             }
         }
 
         // Not a function, restore and try variable declaration
         current = savePos;
-        return parseVariableDeclaration();
+        return parseVariableDeclaration(); // Returns unique_ptr<VarDecl>
     }
 
     // Skip unknown tokens with synchronization

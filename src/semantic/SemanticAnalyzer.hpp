@@ -35,7 +35,7 @@ private:
     std::unique_ptr<SymbolTable> symbolTable;
     std::unique_ptr<TypeChecker> typeChecker;
     std::unique_ptr<InitializationTracker> initTracker;
-
+    std::shared_ptr<ASTNode> astRoot;
     std::vector<SemanticError> errors;
 
     // State tracking
@@ -83,6 +83,7 @@ public:
     // ===== Getters =====
     const std::vector<SemanticError> &getErrors() const { return errors; }
     SymbolTable *getSymbolTable() { return symbolTable.get(); }
+    std::shared_ptr<ASTNode> getAST() const { return astRoot; }
     bool hasErrors() const { return !errors.empty(); }
 
 private:

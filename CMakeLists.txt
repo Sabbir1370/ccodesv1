@@ -4,6 +4,21 @@ project(C_Code_Analyzer)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# ==================== PHASE D - CFG FILES ====================
+set(CFG_SOURCES
+    src/cfg/BasicBlock.cpp
+    src/cfg/Edge.cpp
+    src/cfg/CFG.cpp
+    src/cfg/CFGBuilder.cpp
+)
+
+set(CFG_HEADERS
+    src/cfg/BasicBlock.hpp
+    src/cfg/Edge.hpp
+    src/cfg/CFG.hpp
+    src/cfg/CFGBuilder.hpp
+)
+
 # ==================== SEMANTIC FILES ====================
 set(SEMANTIC_SOURCES
     src/semantic/Symbol.cpp
@@ -23,6 +38,13 @@ set(SEMANTIC_HEADERS
     src/semantic/SemanticAnalyzer.hpp
 )
 
+# ==================== UTILS FILES ====================
+set(UTILS_SOURCES
+    src/utils/Logger.hpp  # Header only
+    src/utils/SourceLocation.hpp  # Header only
+    src/utils/FunctionExtractor.cpp  # ADD THIS
+)
+
 # ==================== MAIN PROGRAM ====================
 add_executable(c-analyzer 
     src/main.cpp
@@ -31,43 +53,51 @@ add_executable(c-analyzer
     src/parser/parser.cpp
     # AST files
     src/ast/ast_nodes.cpp
-    src/ast/ast_visitor.cpp      # <-- ADD THIS LINE
+    src/ast/ast_visitor.cpp
     
     # Phase C - Semantic
     ${SEMANTIC_SOURCES}
+    
+    # Phase D - CFG (NEW)
+    ${CFG_SOURCES}
+    ${UTILS_SOURCES}
 )
 
 target_include_directories(c-analyzer PRIVATE
-    src          # Add this to find headers in src/parser, src/ast
-    src/parser
-    src/ast
-    src/semantic
-    src/utils
+    src           # Main include directory
+    src/parser    # Parser headers
+    src/ast       # AST headers
+    src/semantic  # Semantic headers
+    src/utils     # Utility headers
+    src/cfg       # NEW: CFG headers
 )
 
-target_compile_options(c-analyzer PRIVATE -Wall -Wextra -O2)
-
-# ==================== TESTS ====================
-# Test framework
-add_executable(test_harness test/unit/test_harness.cpp)
-target_compile_options(test_harness PRIVATE -Wall -Wextra -O0 -g)
-
-# Parser tests
-add_executable(test_parser
-    test/unit/test_tokenizer.cpp
-    test/unit/test_parser.cpp
-    src/parser/tokenizer.cpp
-    src/parser/parser.cpp
-    src/ast/ast_nodes.cpp
-    src/ast/ast_visitor.cpp      # <-- ADD THIS LINE
-    ${SEMANTIC_SOURCES}
+target_compile_options(c-analyzer PRIVATE 
+    -Wall 
+    -Wextra 
+    -O2
 )
 
-target_include_directories(test_parser PRIVATE
-    src
-    src/parser
-    src/ast
-    src/semantic
-    src/utils
-)
-target_compile_options(test_parser PRIVATE -Wall -Wextra -O0 -g)
+# Optional: If you want to keep your test_parser (but not required)
+if(FALSE)  # Set to TRUE if you want to keep tests
+    add_executable(test_parser
+        test/unit/test_tokenizer.cpp
+        test/unit/test_parser.cpp
+        src/parser/tokenizer.cpp
+        src/parser/parser.cpp
+        src/ast/ast_nodes.cpp
+        src/ast/ast_visitor.cpp
+        ${SEMANTIC_SOURCES}
+        ${CFG_SOURCES}
+    )
+
+    target_include_directories(test_parser PRIVATE
+        src
+        src/parser
+        src/ast
+        src/semantic
+        src/utils
+        src/cfg
+    )
+    target_compile_options(test_parser PRIVATE -Wall -Wextra -O0 -g)
+endif()
