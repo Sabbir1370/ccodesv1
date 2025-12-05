@@ -45,6 +45,15 @@ set(UTILS_SOURCES
     src/utils/FunctionExtractor.cpp  # ADD THIS
 )
 
+
+# Phase E: Detector Framework
+set(DETECTOR_SOURCES
+    src/detectors/Finding.cpp
+    src/detectors/VulnerabilityDetector.cpp
+    src/detectors/DetectorManager.cpp
+    src/detectors/detectors/SecureMemTracker.cpp
+)
+
 # ==================== MAIN PROGRAM ====================
 add_executable(c-analyzer 
     src/main.cpp
@@ -61,6 +70,8 @@ add_executable(c-analyzer
     # Phase D - CFG (NEW)
     ${CFG_SOURCES}
     ${UTILS_SOURCES}
+    ${DETECTOR_SOURCES} 
+
 )
 
 target_include_directories(c-analyzer PRIVATE
