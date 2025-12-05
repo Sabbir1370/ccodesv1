@@ -6,6 +6,10 @@
 #include <vector>
 #include <string>
 #include "VulnerabilityDetector.hpp"
+#include "detectors/TaintFlowDetector.hpp"
+#include "detectors/SecureMemTracker.hpp"
+#include "detectors/FormatStringInspector.hpp"
+#include "Finding.hpp"
 
 namespace detectors
 {

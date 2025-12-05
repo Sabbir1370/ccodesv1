@@ -14,6 +14,10 @@
 #include "detectors/DetectorManager.hpp"
 #include "detectors/detectors/SecureMemTracker.hpp"
 #include "detectors/detectors/TaintFlowDetector.hpp"
+#include "detectors/detectors/FormatStringInspector.hpp"
+#include "detectors/detectors/UseBeforeInitDetector.hpp"
+#include "detectors/detectors/SimpleBufferDetector.hpp"
+
 int main(int argc, char *argv[])
 {
     if (argc < 2)
@@ -127,8 +131,11 @@ int main(int argc, char *argv[])
 
     // Register available detectors
     detectorManager.registerDetector(std::make_unique<detectors::SecureMemTracker>());
-    // Add more detectors here as they are implemented
     detectorManager.registerDetector(std::make_unique<detectors::TaintFlowDetector>());
+    detectorManager.registerDetector(std::make_unique<detectors::FormatStringInspector>());
+    detectorManager.registerDetector(std::make_unique<detectors::UseBeforeInitDetector>());
+    detectorManager.registerDetector(std::make_unique<detectors::SimpleBufferDetector>());
+    // Add more detectors here as they are implemented
     std::cout << "Available detectors: " << detectorManager.getDetectorCount() << std::endl;
 
     // List detectors if requested

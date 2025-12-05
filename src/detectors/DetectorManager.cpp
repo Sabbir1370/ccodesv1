@@ -1,7 +1,9 @@
-// src/detectors/DetectorManager.cpp - FIXED
 #include "DetectorManager.hpp"
 #include "detectors/SecureMemTracker.hpp"
+#include "detectors/TaintFlowDetector.hpp"
+#include "detectors/FormatStringInspector.hpp"
 #include <algorithm>
+#include <iostream>
 
 namespace detectors
 {

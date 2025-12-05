@@ -46,6 +46,14 @@ set(DETECTORS_PHASE_F
     src/detectors/detectors/TaintFlowDetector.cpp
 )
 
+# Phase G: Additional Detectors (FormatStringInspector) - ADD THIS SECTION
+set(DETECTORS_PHASE_G
+    src/detectors/detectors/FormatStringInspector.cpp
+    src/detectors/detectors/UseBeforeInitDetector.cpp
+    src/detectors/detectors/SimpleBufferDetector.cpp
+
+)
+
 # ==================== MAIN PROGRAM ====================
 add_executable(c-analyzer 
     src/main.cpp
@@ -75,6 +83,9 @@ add_executable(c-analyzer
     
     # Phase F Detector
     ${DETECTORS_PHASE_F}
+    
+    # Phase G Detectors - ADD THIS
+    ${DETECTORS_PHASE_G}
 )
 
 # ==================== INCLUDE DIRECTORIES ====================
@@ -86,7 +97,7 @@ target_include_directories(c-analyzer PRIVATE
     src/cfg
     src/utils
     src/detectors
-    src/detectors/detectors  # For TaintFlowDetector.hpp, FunctionContext.hpp
+    src/detectors/detectors  # For TaintFlowDetector.hpp, FunctionContext.hpp, FormatStringInspector.hpp
 )
 
 # ==================== COMPILER OPTIONS ====================

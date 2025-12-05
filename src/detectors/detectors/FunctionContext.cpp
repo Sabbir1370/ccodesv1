@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-
+#define TAINT_DEBUG_ENABLED 0
 using namespace detectors;
 
 FunctionContext::FunctionContext(std::shared_ptr<CFG> cfg)
@@ -535,41 +535,52 @@ bool FunctionContext::isVariableTainted(const std::string &var_name,
 
 std::vector<TaintedValue> FunctionContext::getTaintSources() const
 {
+#if TAINT_DEBUG_ENABLED
     std::cout << "[TAINT-DEBUG] === getTaintSources() called ===" << std::endl;
     std::cout << "[TAINT-DEBUG] Total blocks in state: " << block_taint_state_.size() << std::endl;
+#endif
 
     std::vector<TaintedValue> sources;
     std::unordered_set<std::string> seen_identifiers;
 
     for (const auto &pair : block_taint_state_)
     {
+#if TAINT_DEBUG_ENABLED
         std::cout << "[TAINT-DEBUG] Checking block #" << pair.first
                   << " with " << pair.second.size() << " taints" << std::endl;
+#endif
 
         for (const auto &taint : pair.second)
         {
+#if TAINT_DEBUG_ENABLED
             std::cout << "[TAINT-DEBUG]   Taint: '" << taint.identifier
-                      << "' depth=" << taint.taint_depth
+                      << "' depth=" << taint.depth
                       << " source_type=" << static_cast<int>(taint.source_type) << std::endl;
+#endif
 
-            if (taint.taint_depth == 0)
+            if (seen_identifiers.find(taint.identifier) == seen_identifiers.end())
             {
-                if (seen_identifiers.find(taint.identifier) == seen_identifiers.end())
-                {
-                    std::cout << "[TAINT-DEBUG]   -> Adding to sources!" << std::endl;
-                    sources.push_back(taint);
-                    seen_identifiers.insert(taint.identifier);
-                }
-                else
-                {
-                    std::cout << "[TAINT-DEBUG]   -> Already seen, skipping" << std::endl;
-                }
+                // This is a new source we haven't seen before
+                sources.push_back(taint);
+                seen_identifiers.insert(taint.identifier);
+
+#if TAINT_DEBUG_ENABLED
+                std::cout << "[TAINT-DEBUG]   -> Adding to sources!" << std::endl;
+#endif
             }
+#if TAINT_DEBUG_ENABLED
+            else
+            {
+                std::cout << "[TAINT-DEBUG]   -> Already seen, skipping" << std::endl;
+            }
+#endif
         }
     }
 
+#if TAINT_DEBUG_ENABLED
     std::cout << "[TAINT-DEBUG] Returning " << sources.size() << " sources" << std::endl;
     std::cout << "[TAINT-DEBUG] === getTaintSources() end ===" << std::endl;
+#endif
 
     return sources;
 }

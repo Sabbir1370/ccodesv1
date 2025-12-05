@@ -11,7 +11,7 @@ namespace detectors
         : VulnerabilityDetector("MEM001", "Unsafe memory/string function usage"),
           ast_(nullptr),
           symtab_(nullptr),
-          unsafe_functions_{"strcpy", "gets", "sprintf", "strcat", "scanf", "printf"} {}
+          unsafe_functions_{"strcpy", "gets", "sprintf", "strcat"} {}
 
     std::vector<Finding> SecureMemTracker::analyze(
         std::shared_ptr<ASTNode> ast,
@@ -153,16 +153,16 @@ namespace detectors
                 finding.cert_reference = "CERT-C STR00-C";
                 finding.owasp_reference = "OWASP A8:2017";
             }
-            else if (funcName == "scanf")
-            {
-                finding.cert_reference = "CERT-C FIO00-C";
-                finding.owasp_reference = "OWASP A1:2017";
-            }
-            else if (funcName == "printf")
-            {
-                finding.cert_reference = "CERT-C FIO00-C";
-                finding.owasp_reference = "OWASP A1:2017";
-            }
+            // else if (funcName == "scanf")
+            // {
+            //     finding.cert_reference = "CERT-C FIO00-C";
+            //     finding.owasp_reference = "OWASP A1:2017";
+            // }
+            // else if (funcName == "printf")
+            // {
+            //     finding.cert_reference = "CERT-C FIO00-C";
+            //     finding.owasp_reference = "OWASP A1:2017";
+            // }
 
             findings_.push_back(finding);
         }
