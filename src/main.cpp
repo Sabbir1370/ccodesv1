@@ -11,11 +11,9 @@
 #include "cfg/CFGBuilder.hpp"
 #include "cfg/CFG.hpp"
 #include "utils/FunctionExtractor.hpp"
-
-// === PHASE E: DETECTOR FRAMEWORK INCLUDES ===
 #include "detectors/DetectorManager.hpp"
 #include "detectors/detectors/SecureMemTracker.hpp"
-
+#include "detectors/detectors/TaintFlowDetector.hpp"
 int main(int argc, char *argv[])
 {
     if (argc < 2)
@@ -130,7 +128,7 @@ int main(int argc, char *argv[])
     // Register available detectors
     detectorManager.registerDetector(std::make_unique<detectors::SecureMemTracker>());
     // Add more detectors here as they are implemented
-
+    detectorManager.registerDetector(std::make_unique<detectors::TaintFlowDetector>());
     std::cout << "Available detectors: " << detectorManager.getDetectorCount() << std::endl;
 
     // List detectors if requested

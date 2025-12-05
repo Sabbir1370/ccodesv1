@@ -12,13 +12,6 @@ set(CFG_SOURCES
     src/cfg/CFGBuilder.cpp
 )
 
-set(CFG_HEADERS
-    src/cfg/BasicBlock.hpp
-    src/cfg/Edge.hpp
-    src/cfg/CFG.hpp
-    src/cfg/CFGBuilder.hpp
-)
-
 # ==================== SEMANTIC FILES ====================
 set(SEMANTIC_SOURCES
     src/semantic/Symbol.cpp
@@ -29,37 +22,38 @@ set(SEMANTIC_SOURCES
     src/semantic/SemanticAnalyzer.cpp
 )
 
-set(SEMANTIC_HEADERS
-    src/semantic/Symbol.hpp
-    src/semantic/Scope.hpp
-    src/semantic/SymbolTable.hpp
-    src/semantic/TypeChecker.hpp
-    src/semantic/InitializationTracker.hpp
-    src/semantic/SemanticAnalyzer.hpp
-)
-
 # ==================== UTILS FILES ====================
 set(UTILS_SOURCES
-    src/utils/Logger.hpp  # Header only
-    src/utils/SourceLocation.hpp  # Header only
-    src/utils/FunctionExtractor.cpp  # ADD THIS
+    src/utils/FunctionExtractor.cpp  # Only .cpp files here
 )
 
-
-# Phase E: Detector Framework
+# ==================== DETECTOR FRAMEWORK ====================
 set(DETECTOR_SOURCES
     src/detectors/Finding.cpp
     src/detectors/VulnerabilityDetector.cpp
     src/detectors/DetectorManager.cpp
+)
+
+# ==================== INDIVIDUAL DETECTORS ====================
+# Phase E: SecureMemTracker
+set(DETECTORS_PHASE_E
     src/detectors/detectors/SecureMemTracker.cpp
+)
+
+# Phase F: Taint Analysis
+set(DETECTORS_PHASE_F
+    src/detectors/detectors/FunctionContext.cpp
+    src/detectors/detectors/TaintFlowDetector.cpp
 )
 
 # ==================== MAIN PROGRAM ====================
 add_executable(c-analyzer 
     src/main.cpp
+    
     # Phase B - Parser
     src/parser/tokenizer.cpp
     src/parser/parser.cpp
+    
     # AST files
     src/ast/ast_nodes.cpp
     src/ast/ast_visitor.cpp
@@ -67,48 +61,38 @@ add_executable(c-analyzer
     # Phase C - Semantic
     ${SEMANTIC_SOURCES}
     
-    # Phase D - CFG (NEW)
+    # Phase D - CFG
     ${CFG_SOURCES}
+    
+    # Utils
     ${UTILS_SOURCES}
-    ${DETECTOR_SOURCES} 
-
+    
+    # Detector Framework
+    ${DETECTOR_SOURCES}
+    
+    # Phase E Detector
+    ${DETECTORS_PHASE_E}
+    
+    # Phase F Detector
+    ${DETECTORS_PHASE_F}
 )
 
+# ==================== INCLUDE DIRECTORIES ====================
 target_include_directories(c-analyzer PRIVATE
-    src           # Main include directory
-    src/parser    # Parser headers
-    src/ast       # AST headers
-    src/semantic  # Semantic headers
-    src/utils     # Utility headers
-    src/cfg       # NEW: CFG headers
+    src
+    src/ast
+    src/parser
+    src/semantic
+    src/cfg
+    src/utils
+    src/detectors
+    src/detectors/detectors  # For TaintFlowDetector.hpp, FunctionContext.hpp
 )
 
+# ==================== COMPILER OPTIONS ====================
 target_compile_options(c-analyzer PRIVATE 
     -Wall 
     -Wextra 
     -O2
+    -std=c++17
 )
-
-# Optional: If you want to keep your test_parser (but not required)
-if(FALSE)  # Set to TRUE if you want to keep tests
-    add_executable(test_parser
-        test/unit/test_tokenizer.cpp
-        test/unit/test_parser.cpp
-        src/parser/tokenizer.cpp
-        src/parser/parser.cpp
-        src/ast/ast_nodes.cpp
-        src/ast/ast_visitor.cpp
-        ${SEMANTIC_SOURCES}
-        ${CFG_SOURCES}
-    )
-
-    target_include_directories(test_parser PRIVATE
-        src
-        src/parser
-        src/ast
-        src/semantic
-        src/utils
-        src/cfg
-    )
-    target_compile_options(test_parser PRIVATE -Wall -Wextra -O0 -g)
-endif()
