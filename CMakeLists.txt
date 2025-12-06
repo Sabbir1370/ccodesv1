@@ -54,6 +54,12 @@ set(DETECTORS_PHASE_G
 
 )
 
+set(POLICY_SOURCES
+    src/policy/PolicyLoader.cpp
+    src/policy/PolicyMapper.cpp
+    src/policy/RuleRepository.cpp
+)
+
 # ==================== MAIN PROGRAM ====================
 add_executable(c-analyzer 
     src/main.cpp
@@ -86,6 +92,9 @@ add_executable(c-analyzer
     
     # Phase G Detectors - ADD THIS
     ${DETECTORS_PHASE_G}
+
+    ${POLICY_SOURCES}
+
 )
 
 # ==================== INCLUDE DIRECTORIES ====================

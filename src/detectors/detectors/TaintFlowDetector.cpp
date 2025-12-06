@@ -20,8 +20,8 @@ std::vector<Finding> TaintFlowDetector::analyze(
 {
     std::vector<Finding> findings;
 
-    std::cout << "[TAINT] ===== Starting Taint Analysis =====\n";
-    std::cout << "[TAINT] Number of CFGs to analyze: " << cfgs.size() << "\n";
+    // std::cout << "[TAINT] ===== Starting Taint Analysis =====\n";
+    // std::cout << "[TAINT] Number of CFGs to analyze: " << cfgs.size() << "\n";
 
     for (size_t i = 0; i < cfgs.size(); i++)
     {
@@ -32,18 +32,18 @@ std::vector<Finding> TaintFlowDetector::analyze(
         if (auto func = cfg->getFunction())
         {
             std::string func_name = func->getFunctionName();
-            std::cout << "[TAINT] Function " << i + 1 << ": " << func_name << "\n";
+            // std::cout << "[TAINT] Function " << i + 1 << ": " << func_name << "\n";
 
             // Create FunctionContext
             FunctionContext context(cfg);
 
             // Run analysis
-            std::cout << "[TAINT]   Running taint analysis..." << std::endl;
+            // std::cout << "[TAINT]   Running taint analysis..." << std::endl;
             auto taint_paths = context.analyze(); // Get actual taint paths
 
             // Get taint sources (without duplicates)
             auto sources = context.getTaintSources();
-            std::cout << "[TAINT]   Found " << sources.size() << " unique taint source(s)\n";
+            // std::cout << "[TAINT]   Found " << sources.size() << " unique taint source(s)\n";
 
             // Create findings for taint sources
             for (const auto &source : sources)
@@ -63,8 +63,8 @@ std::vector<Finding> TaintFlowDetector::analyze(
             // This is where we report actual flows
             if (!taint_paths.empty())
             {
-                std::cout << "[TAINT]   Found " << taint_paths.size()
-                          << " taint flow path(s)\n";
+                // std::cout << "[TAINT]   Found " << taint_paths.size()
+                //          << " taint flow path(s)\n";
 
                 for (const auto &path : taint_paths)
                 {
@@ -94,14 +94,14 @@ std::vector<Finding> TaintFlowDetector::analyze(
             std::string taint_graph = context.getTaintGraph();
             if (!taint_graph.empty())
             {
-                std::cout << "[TAINT]   Taint Graph:\n"
-                          << taint_graph << std::endl;
+                // std::cout << "[TAINT]   Taint Graph:\n"
+                //          << taint_graph << std::endl;
             }
         }
     }
 
-    std::cout << "[TAINT] ===== Taint Analysis Complete =====\n";
-    std::cout << "[TAINT] Total findings: " << findings.size() << "\n";
+    // std::cout << "[TAINT] ===== Taint Analysis Complete =====\n";
+    // std::cout << "[TAINT] Total findings: " << findings.size() << "\n";
 
     return findings;
 }

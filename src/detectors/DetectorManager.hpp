@@ -1,4 +1,4 @@
-// src/detectors/DetectorManager.hpp - FIXED
+// src/detectors/DetectorManager.hpp - UPDATED
 #ifndef DETECTOR_MANAGER_HPP
 #define DETECTOR_MANAGER_HPP
 
@@ -9,7 +9,16 @@
 #include "detectors/TaintFlowDetector.hpp"
 #include "detectors/SecureMemTracker.hpp"
 #include "detectors/FormatStringInspector.hpp"
+#include "detectors/UseBeforeInitDetector.hpp"
+#include "detectors/SimpleBufferDetector.hpp"
 #include "Finding.hpp"
+
+// Forward declarations to avoid circular includes
+namespace policy
+{
+    class PolicyMapper;
+    class RuleRepository;
+}
 
 namespace detectors
 {
@@ -18,9 +27,11 @@ namespace detectors
     {
     private:
         std::vector<std::unique_ptr<VulnerabilityDetector>> detectors_;
+        std::shared_ptr<policy::PolicyMapper> policy_mapper_;
+        std::shared_ptr<policy::RuleRepository> rule_repo_;
 
     public:
-        DetectorManager() = default;
+        DetectorManager();
         ~DetectorManager() = default;
 
         // Non-copyable
@@ -30,6 +41,16 @@ namespace detectors
         // Move operations
         DetectorManager(DetectorManager &&) = default;
         DetectorManager &operator=(DetectorManager &&) = default;
+
+        // Initialize all detectors
+        void initialize();
+
+        // Load and apply policy
+        bool loadPolicy(const std::string &policy_file_path);
+
+        // Get policy components
+        std::shared_ptr<policy::PolicyMapper> getPolicyMapper() const;
+        std::shared_ptr<policy::RuleRepository> getRuleRepository() const;
 
         void registerDetector(std::unique_ptr<VulnerabilityDetector> detector);
 

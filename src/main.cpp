@@ -129,15 +129,59 @@ int main(int argc, char *argv[])
     // Create detector manager
     detectors::DetectorManager detectorManager;
 
-    // Register available detectors
-    detectorManager.registerDetector(std::make_unique<detectors::SecureMemTracker>());
-    detectorManager.registerDetector(std::make_unique<detectors::TaintFlowDetector>());
-    detectorManager.registerDetector(std::make_unique<detectors::FormatStringInspector>());
-    detectorManager.registerDetector(std::make_unique<detectors::UseBeforeInitDetector>());
-    detectorManager.registerDetector(std::make_unique<detectors::SimpleBufferDetector>());
-    // Add more detectors here as they are implemented
+    // Detectors are now automatically registered in DetectorManager constructor
+    // No need to manually register them anymore!
+
+    // Try to load policy file
+
+    std::string policy_file = "/home/zer0/ccodesv1/config/policy.json";
+    bool policy_loaded = false;
+
+    // Check if policy file was provided as command line argument
+    for (int i = 1; i < argc; ++i)
+    {
+        if (std::string(argv[i]) == "--policy" && i + 1 < argc)
+        {
+            policy_file = argv[++i];
+            break;
+        }
+        else if (std::string(argv[i]) == "-p" && i + 1 < argc)
+        {
+            policy_file = argv[++i];
+            break;
+        }
+    }
+
+    // Load the policy
+    std::cout << "Loading policy from: " << policy_file << std::endl;
+    policy_loaded = detectorManager.loadPolicy(policy_file);
+
+    if (!policy_loaded)
+    {
+        std::cout << "Warning: Could not load policy file. Using default detector settings." << std::endl;
+        // You can manually enable/disable detectors here if needed
+        // detectorManager.enableDetector("SecureMemTracker");
+        // detectorManager.disableDetector("SimpleBufferDetector");
+    }
+    // Keep this cleaner output (around line 150-155 in your main.cpp):
+    std::cout << "\nDetector Status:" << std::endl;
+    for (const auto &detector : detectorManager.getDetectors())
+    {
+        std::cout << "  - " << detector->getName()
+                  << ": " << (detector->isEnabled() ? "ENABLED" : "DISABLED")
+                  << std::endl;
+    }
+
     std::cout << "Available detectors: " << detectorManager.getDetectorCount() << std::endl;
 
+    // Optional: Show which detectors are enabled
+    std::cout << "\nDetector Status:" << std::endl;
+    for (const auto &detector : detectorManager.getDetectors())
+    {
+        std::cout << "  - " << detector->getName()
+                  << ": " << (detector->isEnabled() ? "ENABLED" : "DISABLED")
+                  << std::endl;
+    }
     // List detectors if requested
     if (list_detectors)
     {

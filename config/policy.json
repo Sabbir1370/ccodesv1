@@ -1,0 +1,81 @@
+{
+    "version": "1.0",
+    "description": "C-Code Security Analyzer Policy Configuration",
+    "detectors": {
+        "MEM001": {
+            "rule_id": "MEM001",
+            "enabled": true,
+            "severity": "high",
+            "risk_weight": 1.5,
+            "description": "Unsafe memory/string function usage",
+            "cert_reference": "CERT-C STR00-C",
+            "owasp_reference": "OWASP A8:2017",
+            "category": "memory",
+            "cwe_ids": [
+                "CWE-119",
+                "CWE-120",
+                "CWE-787"
+            ]
+        },
+        "TAINT001": {
+            "rule_id": "TAINT001",
+            "enabled": true,
+            "severity": "critical",
+            "risk_weight": 2.0,
+            "description": "Tainted data flow analysis",
+            "cert_reference": "CERT-C MSC00-C",
+            "owasp_reference": "OWASP A1:2017",
+            "category": "taint",
+            "cwe_ids": [
+                "CWE-89",
+                "CWE-78",
+                "CWE-20"
+            ]
+        },
+        "FMT001": {
+            "rule_id": "FMT001",
+            "enabled": true,
+            "severity": "medium",
+            "risk_weight": 1.0,
+            "description": "Format string vulnerability detection",
+            "cert_reference": "CERT-C FIO00-C",
+            "owasp_reference": "OWASP A1:2017",
+            "category": "format",
+            "cwe_ids": [
+                "CWE-134"
+            ]
+        },
+        "INIT001": {
+            "rule_id": "INIT001",
+            "enabled": true,
+            "severity": "medium",
+            "risk_weight": 1.0,
+            "description": "Uninitialized variable usage detection",
+            "cert_reference": "CERT-C EXP33-C",
+            "owasp_reference": "OWASP A9:2017",
+            "category": "initialization",
+            "cwe_ids": [
+                "CWE-457"
+            ]
+        },
+        "BUF001": {
+            "rule_id": "BUF001",
+            "enabled": true,
+            "severity": "low",
+            "risk_weight": 0.8,
+            "description": "Basic buffer overflow heuristics",
+            "cert_reference": "CERT-C ARR00-C",
+            "owasp_reference": "OWASP A2:2017",
+            "category": "buffer",
+            "cwe_ids": [
+                "CWE-120",
+                "CWE-787"
+            ]
+        }
+    },
+    "global_settings": {
+        "max_findings_per_detector": 100,
+        "scan_timeout_seconds": 300,
+        "enable_trace_collection": true
+    }
+}
