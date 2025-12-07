@@ -81,7 +81,25 @@ namespace detectors
          */
         bool hasTrace() const { return !trace.empty(); }
     };
-
+    // In Finding.hpp (add this free function)
+    inline std::string SeverityToString(Severity severity)
+    {
+        switch (severity)
+        {
+        case Severity::CRITICAL:
+            return "CRITICAL";
+        case Severity::HIGH:
+            return "HIGH";
+        case Severity::MEDIUM:
+            return "MEDIUM";
+        case Severity::LOW:
+            return "LOW";
+        case Severity::INFO:
+            return "INFO";
+        default:
+            return "UNKNOWN";
+        }
+    }
 } // namespace detectors
 
 #endif // FINDING_HPP

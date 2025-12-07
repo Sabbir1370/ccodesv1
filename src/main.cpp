@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <memory>
+#include <iomanip>
 #include "parser/tokenizer.h"
 #include "parser/parser.h"
 #include "semantic/SymbolTable.hpp"
@@ -18,15 +19,26 @@
 #include "detectors/detectors/UseBeforeInitDetector.hpp"
 #include "detectors/detectors/SimpleBufferDetector.hpp"
 
+// Risk Assessment headers (Phase I)
+#include "risk/RiskAssessmentEngine.hpp"
+// #include "risk/ComplianceChecker.hpp"
+// #include "risk/RiskMetrics.hpp"
+// #include "risk/RiskScoreCalculator.hpp"
+
 int main(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        std::cerr << "Usage: " << argv[0] << " <file.c>\n";
+        std::cerr << "Usage: " << argv[0] << " <file.c> [options]\n";
         std::cerr << "Options:\n";
-        std::cerr << "  --enable-all    Enable all security detectors\n";
-        std::cerr << "  --disable-all   Disable all security detectors\n";
-        std::cerr << "  --list-detectors List all available detectors\n";
+        std::cerr << "  --enable-all          Enable all security detectors\n";
+        std::cerr << "  --disable-all         Disable all security detectors\n";
+        std::cerr << "  --list-detectors      List all available detectors\n";
+        std::cerr << "  --policy <file>       Policy configuration file\n";
+        std::cerr << "  --risk-report         Generate risk assessment report\n";
+        std::cerr << "  --compliance          Check compliance standards\n";
+        std::cerr << "  --output <file>       Output report file\n";
+        std::cerr << "  --no-risk             Skip risk assessment (default)\n";
         return 1;
     }
 
@@ -36,6 +48,11 @@ int main(int argc, char *argv[])
     bool enable_all = false;
     bool disable_all = false;
     bool list_detectors = false;
+    bool generate_risk_report = false;
+    bool check_compliance = false;
+    bool skip_risk = false;
+    std::string policy_file = "/home/zer0/ccodesv1/config/policy.json";
+    std::string output_file = "";
 
     for (int i = 2; i < argc; i++)
     {
@@ -46,6 +63,35 @@ int main(int argc, char *argv[])
             disable_all = true;
         else if (arg == "--list-detectors")
             list_detectors = true;
+        else if (arg == "--risk-report")
+            generate_risk_report = true;
+        else if (arg == "--compliance")
+            check_compliance = true;
+        else if (arg == "--no-risk")
+            skip_risk = true;
+        else if (arg == "--policy" && i + 1 < argc)
+            policy_file = argv[++i];
+        else if (arg == "--output" && i + 1 < argc)
+            output_file = argv[++i];
+    }
+
+    // Default: if neither risk-report nor no-risk specified, ask user
+    if (!generate_risk_report && !skip_risk)
+    {
+        std::cout << "Run risk assessment? (y/n): ";
+        std::string response;
+        std::getline(std::cin, response);
+        if (response == "y" || response == "Y")
+        {
+            generate_risk_report = true;
+            // Also ask about compliance
+            std::cout << "Check compliance standards? (y/n): ";
+            std::getline(std::cin, response);
+            if (response == "y" || response == "Y")
+            {
+                check_compliance = true;
+            }
+        }
     }
 
     std::ifstream file(filename);
@@ -60,8 +106,12 @@ int main(int argc, char *argv[])
                        std::istreambuf_iterator<char>());
     file.close();
 
-    std::cout << "=== C Code Security Analyzer (Phase E) ===" << std::endl;
+    std::cout << "=== C Code Security Analyzer ===" << std::endl;
     std::cout << "Analyzing: " << filename << std::endl;
+    if (generate_risk_report)
+        std::cout << "Risk Assessment: ENABLED" << std::endl;
+    if (check_compliance)
+        std::cout << "Compliance Check: ENABLED" << std::endl;
 
     std::cout << "\n=== Phase A: Tokenization ===" << std::endl;
     Tokenizer tokenizer(source);
@@ -129,41 +179,15 @@ int main(int argc, char *argv[])
     // Create detector manager
     detectors::DetectorManager detectorManager;
 
-    // Detectors are now automatically registered in DetectorManager constructor
-    // No need to manually register them anymore!
-
-    // Try to load policy file
-
-    std::string policy_file = "/home/zer0/ccodesv1/config/policy.json";
-    bool policy_loaded = false;
-
-    // Check if policy file was provided as command line argument
-    for (int i = 1; i < argc; ++i)
-    {
-        if (std::string(argv[i]) == "--policy" && i + 1 < argc)
-        {
-            policy_file = argv[++i];
-            break;
-        }
-        else if (std::string(argv[i]) == "-p" && i + 1 < argc)
-        {
-            policy_file = argv[++i];
-            break;
-        }
-    }
-
     // Load the policy
     std::cout << "Loading policy from: " << policy_file << std::endl;
-    policy_loaded = detectorManager.loadPolicy(policy_file);
+    bool policy_loaded = detectorManager.loadPolicy(policy_file);
 
     if (!policy_loaded)
     {
         std::cout << "Warning: Could not load policy file. Using default detector settings." << std::endl;
-        // You can manually enable/disable detectors here if needed
-        // detectorManager.enableDetector("SecureMemTracker");
-        // detectorManager.disableDetector("SimpleBufferDetector");
     }
-    // Keep this cleaner output (around line 150-155 in your main.cpp):
+
     std::cout << "\nDetector Status:" << std::endl;
     for (const auto &detector : detectorManager.getDetectors())
     {
@@ -174,14 +198,6 @@ int main(int argc, char *argv[])
 
     std::cout << "Available detectors: " << detectorManager.getDetectorCount() << std::endl;
 
-    // Optional: Show which detectors are enabled
-    std::cout << "\nDetector Status:" << std::endl;
-    for (const auto &detector : detectorManager.getDetectors())
-    {
-        std::cout << "  - " << detector->getName()
-                  << ": " << (detector->isEnabled() ? "ENABLED" : "DISABLED")
-                  << std::endl;
-    }
     // List detectors if requested
     if (list_detectors)
     {
@@ -220,7 +236,85 @@ int main(int argc, char *argv[])
 
     auto findings = detectorManager.runEnabledDetectors(ast_for_detectors, symtab, all_cfgs);
 
-    // Report results
+    // ========== PHASE I: RISK ASSESSMENT ==========
+    if (generate_risk_report && !findings.empty())
+    {
+        std::cout << "\n=== Phase I: Risk Assessment & Compliance ===" << std::endl;
+
+        try
+        {
+            // Create risk assessment engine
+            auto risk_calculator = std::make_unique<risk::DefaultRiskScoreCalculator>();
+            auto compliance_checker = std::make_unique<risk::DefaultComplianceChecker>();
+
+            risk::RiskAssessmentEngine risk_engine(
+                std::move(risk_calculator),
+                std::move(compliance_checker));
+
+            // Load detector weights from policy if available
+            // Note: You'll need to add a method to DetectorManager to get weights
+            // For now, we'll use default weights
+            std::map<std::string, double> detector_weights = {
+                {"MEM001", 1.5},   // SecureMemTracker
+                {"TAINT001", 2.0}, // TaintFlowDetector
+                {"FMT001", 1.0},   // FormatStringInspector
+                {"INIT001", 1.0},  // UseBeforeInitDetector
+                {"BUF001", 0.8}    // SimpleBufferDetector
+            };
+            risk_engine.setDetectorWeights(detector_weights);
+
+            // Configure compliance standards to check
+            std::vector<std::string> required_standards;
+            if (check_compliance)
+            {
+                required_standards = {"CERT-C", "OWASP", "CWE"};
+            }
+
+            // Perform risk assessment
+            auto risk_results = risk_engine.assessRisk(
+                findings,
+                required_standards,
+                detectors::Severity::LOW // Include even low severity for risk assessment
+            );
+
+            // Output results
+            if (!output_file.empty())
+            {
+                std::ofstream out_file(output_file);
+                if (out_file.is_open())
+                {
+                    std::string report = risk_engine.generateRiskReport(risk_results);
+                    out_file << report;
+                    out_file.close();
+                    std::cout << "✓ Risk report written to: " << output_file << std::endl;
+                }
+                else
+                {
+                    std::cerr << "✗ Could not open output file: " << output_file << std::endl;
+                }
+            }
+            else
+            {
+                // Console output - Executive Summary
+                std::cout << "\n"
+                          << risk_engine.generateExecutiveSummary(risk_results) << "\n";
+
+                // Optionally show full report in console
+                if (findings.size() < 20)
+                { // Only show full report for small numbers of findings
+                    std::cout << "\n"
+                              << risk_engine.generateRiskReport(risk_results) << "\n";
+                }
+            }
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "✗ Risk assessment failed: " << e.what() << std::endl;
+            std::cerr << "Continuing with basic analysis..." << std::endl;
+        }
+    }
+
+    // ========== REPORT RESULTS ==========
     std::cout << "\n=== SECURITY ANALYSIS RESULTS ===" << std::endl;
     if (findings.empty())
     {
@@ -269,30 +363,66 @@ int main(int argc, char *argv[])
         if (info > 0)
             std::cout << "  INFO: " << info << std::endl;
 
-        std::cout << "\nDetailed findings:" << std::endl;
-        std::cout << "==========================================" << std::endl;
-
-        for (size_t i = 0; i < findings.size(); i++)
+        // Only show detailed findings if not too many
+        if (findings.size() <= 10)
         {
-            std::cout << "\nFinding #" << (i + 1) << ":\n";
-            std::cout << findings[i].toString() << std::endl;
+            std::cout << "\nDetailed findings:" << std::endl;
+            std::cout << "==========================================" << std::endl;
+
+            for (size_t i = 0; i < findings.size(); i++)
+            {
+                std::cout << "\nFinding #" << (i + 1) << ":\n";
+                std::cout << findings[i].toString() << std::endl;
+            }
+        }
+        else
+        {
+            std::cout << "\n(Detailed findings omitted due to quantity. Use --output for full report.)" << std::endl;
         }
     }
 
     // Summary
     std::cout << "\n=== ANALYSIS SUMMARY ===" << std::endl;
     std::cout << "Phases completed: A (Tokenization), B (Parsing), C (Semantic),";
-    std::cout << " D (CFG), E (Detection)" << std::endl;
+    std::cout << " D (CFG), E (Detection)";
+    if (generate_risk_report)
+        std::cout << ", I (Risk Assessment)";
+    std::cout << std::endl;
     std::cout << "Functions analyzed: " << functions.size() << std::endl;
     std::cout << "CFGs built: " << all_cfgs.size() << std::endl;
     std::cout << "Detectors run: " << detectorManager.getDetectorCount() << std::endl;
     std::cout << "Security issues found: " << findings.size() << std::endl;
 
+    if (generate_risk_report && !findings.empty())
+    {
+        // Show risk score if available
+        std::cout << "Risk Assessment: Completed" << std::endl;
+    }
+
     // Exit code based on findings
     if (!findings.empty())
     {
-        std::cout << "\n⚠ Security vulnerabilities detected. Review recommended." << std::endl;
-        return 2; // Exit code 2 for security issues found
+        // Check for critical findings
+        bool has_critical = false;
+        for (const auto &finding : findings)
+        {
+            if (finding.severity == detectors::Severity::CRITICAL)
+            {
+                has_critical = true;
+                break;
+            }
+        }
+
+        if (has_critical)
+        {
+            std::cout << "\n✗ CRITICAL vulnerabilities detected. Immediate action required!" << std::endl;
+            return 3; // Exit code 3 for critical issues
+        }
+        else
+        {
+            std::cout << "\n⚠ Security vulnerabilities detected. Review recommended." << std::endl;
+            return 2; // Exit code 2 for non-critical security issues
+        }
     }
 
     std::cout << "\n✓ Analysis completed successfully." << std::endl;

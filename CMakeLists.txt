@@ -60,6 +60,15 @@ set(POLICY_SOURCES
     src/policy/RuleRepository.cpp
 )
 
+set(RISK_SOURCES
+    src/risk/RiskScoreCalculator.cpp
+    src/risk/ComplianceChecker.cpp
+    src/risk/RiskAssessmentEngine.cpp
+)
+
+
+
+
 # ==================== MAIN PROGRAM ====================
 add_executable(c-analyzer 
     src/main.cpp
@@ -94,7 +103,7 @@ add_executable(c-analyzer
     ${DETECTORS_PHASE_G}
 
     ${POLICY_SOURCES}
-
+    ${RISK_SOURCES} 
 )
 
 # ==================== INCLUDE DIRECTORIES ====================
