@@ -66,8 +66,13 @@ set(RISK_SOURCES
     src/risk/RiskAssessmentEngine.cpp
 )
 
-
-
+set(REPORTING_SOURCES
+    src/reporting/HTMLReportGenerator.cpp
+    src/reporting/JSONReportGenerator.cpp
+    src/reporting/ReportGenerator.cpp
+    src/reporting/SARIFReportGenerator.cpp
+    src/reporting/ReportFormats.cpp
+)
 
 # ==================== MAIN PROGRAM ====================
 add_executable(c-analyzer 
@@ -104,6 +109,9 @@ add_executable(c-analyzer
 
     ${POLICY_SOURCES}
     ${RISK_SOURCES} 
+
+    ${REPORTING_SOURCES}
+
 )
 
 # ==================== INCLUDE DIRECTORIES ====================
