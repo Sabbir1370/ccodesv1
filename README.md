@@ -14,4 +14,5 @@ mkdir build && cd build
 cmake ..
 make`
 
+## note 
 ** Almost complete but need to debug **
