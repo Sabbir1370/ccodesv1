@@ -1,6 +1,7 @@
 # C Code Security Analyzer
 
 A static analysis tool for detecting security vulnerabilities in C code.
+(note: almost done! need to debug something.)
 
 ## Features
 - Taint analysis
@@ -13,6 +14,3 @@ A static analysis tool for detecting security vulnerabilities in C code.
 mkdir build && cd build
 cmake ..
 make`
-
-## note 
-** Almost complete but need to debug **
