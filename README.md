@@ -13,3 +13,5 @@ A static analysis tool for detecting security vulnerabilities in C code.
 mkdir build && cd build
 cmake ..
 make`
+
+** Almost complete but need to debug **
